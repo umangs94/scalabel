@@ -12,6 +12,7 @@ import * as types from '../action/types'
 import Session from '../common/session'
 import { defaultAppBar } from '../styles/general'
 import { Component } from './component'
+import { FormattedInputs } from './titlebar_input_field'
 
 const styles: any = (theme: any) => createStyles({
   appBar: {
@@ -128,6 +129,7 @@ class TitleBar extends Component<Props> {
                   {title}
                 </Typography>
                 <div className={classes.grow}/>
+                  <FormattedInputs />
                 {buttons}
               </Toolbar>
             </AppBar>
