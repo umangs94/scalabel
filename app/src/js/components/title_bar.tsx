@@ -65,10 +65,18 @@ function goToPreviousItem () {
  * Save the current state to the server
  */
 function save () {
-  // const state = Session.getState();
-  // const xhr = new XMLHttpRequest();
-  // xhr.open('POST', './postSaveV2');
-  // xhr.send(JSON.stringify(state));
+  const state = Session.getState();
+  const xhr = new XMLHttpRequest();
+  console.log(state);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (JSON.parse(xhr.response) === 0) {
+        alert('Saved successfully.');
+      }
+    }
+  };
+  xhr.open('POST', './postSaveV2');
+  xhr.send(JSON.stringify(state));
 }
 
 /**

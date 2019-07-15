@@ -130,12 +130,13 @@ type SatConfig struct {
 }
 
 type SatItem struct {
-	Id     int    `json:"id" yaml:"id"`
-	Index  int    `json:"index" yaml:"index"`
-	Url    string `json:"url" yaml:"url"`
-	Active bool   `json:"active" yaml:"active"`
-	Loaded bool   `json:"loaded" yaml:"loaded"`
-	Labels []int  `json:"labels, []int" yaml:"labels"`
+	Id     int                            `json:"id" yaml:"id"`
+	Index  int                            `json:"index" yaml:"index"`
+	Url    string                         `json:"url" yaml:"url"`
+	Active bool                           `json:"active" yaml:"active"`
+	Loaded bool                           `json:"loaded" yaml:"loaded"`
+	Labels map[int]SatLabel               `json:"labels" yaml:"labels"`
+	Shapes map[int]map[string]interface{} `json:"shapes" yaml:"shapes"`
 }
 
 type SatLabel struct {
@@ -150,6 +151,8 @@ type SatLabel struct {
 	Shapes        []int            `json:"shapes" yaml:"shapes"`
 	SelectedShape int              `json:"selectedShape" yaml:"selectedShape"`
 	State         int              `json:"state" yaml:"state"`
+	Type          string           `json:"type" yaml:"type"`
+	Order         int              `json:"order" yaml:"order"`
 }
 
 // Get the most recent assignment given the needed fields.
@@ -290,7 +293,7 @@ func assignmentToSat(assignment *Assignment) Sat {
 			Id:     item.Index,
 			Index:  item.Index,
 			Url:    item.Url,
-			Labels: []int{},
+			Labels: map[int]SatLabel{},
 		}
 		items = append(items, satItem)
 	}
@@ -367,8 +370,15 @@ func postSaveV2Handler(w http.ResponseWriter, r *http.Request) {
 	err = storage.Save(assignment.GetKey(), assignment.GetFields())
 	if err != nil {
 		Error.Println(err)
+		w.Write(nil)
+	} else {
+		response, err := json.Marshal(0)
+		if err != nil {
+			w.Write(nil)
+		} else {
+			w.Write(response)
+		}
 	}
-	w.Write(nil)
 }
 
 // Handles the export of submitted assignments
@@ -403,7 +413,7 @@ func postExportV2Handler(w http.ResponseWriter, r *http.Request) {
 				item.Url = itemToLoad.Url
 				item.Attributes = map[string]string{}
 				if len(itemToLoad.Labels) > 0 {
-					itemLabel := sat.Labels[itemToLoad.Labels[0]]
+					itemLabel := itemToLoad.Labels[0]
 					keys := reflect.ValueOf(itemLabel.Attributes).MapKeys()
 					strkeys := make([]string, len(keys))
 					for i := 0; i < len(keys); i++ {
