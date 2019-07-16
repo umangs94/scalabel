@@ -73,7 +73,7 @@ function save () {
         alert('Saved successfully.')
       }
     }
-  };
+  }
   xhr.open('POST', './postSaveV2')
   xhr.send(JSON.stringify(state))
 }
