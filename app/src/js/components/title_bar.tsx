@@ -65,18 +65,17 @@ function goToPreviousItem () {
  * Save the current state to the server
  */
 function save () {
-  const state = Session.getState();
-  const xhr = new XMLHttpRequest();
-  console.log(state);
-  xhr.onreadystatechange = function() {
+  const state = Session.getState()
+  const xhr = new XMLHttpRequest()
+  xhr.onreadystatechange = () => {
     if (xhr.readyState === 4) {
       if (JSON.parse(xhr.response) === 0) {
-        alert('Saved successfully.');
+        alert('Saved successfully.')
       }
     }
   };
-  xhr.open('POST', './postSaveV2');
-  xhr.send(JSON.stringify(state));
+  xhr.open('POST', './postSaveV2')
+  xhr.send(JSON.stringify(state))
 }
 
 /**
