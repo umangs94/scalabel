@@ -33,9 +33,9 @@ interface Props {
   theme: any
   /** title of TitleBar */
   title: string
-  /** dashboardLink of TittleBar */
+  /** dashboardLink of TitleBar */
   dashboardLink: string
-  /** instructionLink of TittleBar */
+  /** instructionLink of TitleBar */
   instructionLink: string
 }
 
