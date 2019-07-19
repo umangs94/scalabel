@@ -139,12 +139,14 @@ SatImage.prototype.deselectAll = function() {
   }
 };
 
-SatImage.prototype.deleteLabel = function(label) {
-  if (label.parent) {
-    label.parent.delete();
-  } else {
-    label.delete();
-  }
+SatImage.prototype.deleteLabel = function (label) {
+    if (confirm("Are you sure that you want to end this track?")) {
+        if (label.parent) {
+            label.parent.delete();
+        } else {
+            label.delete();
+        }
+    }
 };
 
 SatImage.prototype._selectLabel = function(label) {
@@ -630,13 +632,15 @@ SatImage.prototype._trackLinkHandler = function() {
   }
 };
 
-SatImage.prototype._endTrackHandler = function() {
-  let self = this;
-  if (self.selectedLabel) {
-    self.selectedLabel.parent.endTrack(self.selectedLabel);
-    self.redrawLabelCanvas();
-    self.redrawHiddenCanvas();
-  }
+SatImage.prototype._endTrackHandler = function () {
+    if (confirm("Are you sure that you want to end this track?")) {
+        let self = this;
+        if (self.selectedLabel) {
+            self.selectedLabel.parent.endTrack(self.selectedLabel);
+            self.redrawLabelCanvas();
+            self.redrawHiddenCanvas();
+        }
+    }
 };
 
 /**
