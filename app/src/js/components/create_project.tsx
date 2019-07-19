@@ -69,7 +69,7 @@ class Create extends React.Component<Props, State> {
               >
                 <Toolbar>
                   <Typography variant='h6' noWrap>
-                    Create A Project
+                    Open or create project
                   </Typography>
                 </Toolbar>
               </AppBar>
