@@ -76,7 +76,8 @@ export class Rect2D extends Vector {
 
   /** convert this drawable rect to a rect state */
   public toRect (): RectType {
-    return makeRect({ x: this.x, y: this.y, w: this.w, h: this.h })
+    return makeRect({
+      x1: this.x, y1: this.y, x2: this.x + this.w, y2: this.y + this.h})
   }
 
   /**
@@ -87,6 +88,7 @@ export class Rect2D extends Vector {
    */
   public draw (
     context: Context2D, ratio: number, style: Rect2DStyle): void {
+    context.save()
     // convert to display resolution
     const real = this.clone().scale(ratio)
     context.strokeStyle = toCssColor(style.color)

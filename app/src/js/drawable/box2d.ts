@@ -10,7 +10,7 @@ import { Vector2D } from '../math/vector2d'
 import { DrawMode, Label2D } from './label2d'
 import { makePoint2DStyle, Point2D } from './point2d'
 import { makeRect2DStyle, Rect2D } from './rect2d'
-import { Context2D, encodeControlColor, getColorById } from './util'
+import { blendColor, Context2D, encodeControlColor, getColorById } from './util'
 
 type Shape = Rect2D | Point2D
 
@@ -31,8 +31,8 @@ export class Box2D extends Label2D {
     super()
     this._shapes = [
       new Rect2D(),
-      new Point2D(), new Point2D(), new Point2D(), new Point2D(), // corners
-      new Point2D(), new Point2D(), new Point2D(), new Point2D()  // midpoints
+      new Point2D(), new Point2D(), new Point2D(), new Point2D(),
+      new Point2D(), new Point2D(), new Point2D(), new Point2D()
     ]
   }
 
@@ -57,11 +57,20 @@ export class Box2D extends Label2D {
         pointStyle = _.assign(pointStyle, DEFAULT_VIEW_POINT_STYLE)
         highPointStyle = _.assign(highPointStyle, DEFAULT_VIEW_HIGH_POINT_STYLE)
         rectStyle = _.assign(rectStyle, DEFAULT_VIEW_RECT_STYLE)
-        assignColor = (_i: number): number[] => self._color
+        assignColor = (i: number): number[] => {
+          if (i % 2 === 0 && i > 0) {
+            // midpoint
+            return blendColor(self._color, [255, 255, 255], 0.7)
+          } else {
+            // vertex
+            return self._color
+          }
+        }
         break
       case DrawMode.CONTROL:
         pointStyle = _.assign(pointStyle, DEFAULT_CONTROL_POINT_STYLE)
-        highPointStyle = _.assign(highPointStyle, DEFAULT_CONTROL_POINT_STYLE)
+        highPointStyle = _.assign(
+          highPointStyle, DEFAULT_CONTROL_POINT_STYLE)
         rectStyle = _.assign(rectStyle, DEFAULT_CONTROL_RECT_STYLE)
         assignColor = (i: number): number[] => {
           return encodeControlColor(self._index, i)
@@ -75,13 +84,15 @@ export class Box2D extends Label2D {
     rect.draw(context, ratio, rectStyle)
     if (mode === DrawMode.CONTROL || this._selected || this._highlighted) {
       for (let i = 1; i <= 8; i += 1) {
-        let style = pointStyle
+        let style
         if (i === self._highlightedHandle) {
           style = highPointStyle
+        } else {
+          style = pointStyle
         }
         style.color = assignColor(i)
         const point = self._shapes[i] as Point2D
-        point.draw(context, ratio, pointStyle)
+        point.draw(context, ratio, style)
       }
     }
   }
@@ -148,10 +159,10 @@ export class Box2D extends Label2D {
     }
     // update the rectangle
     const rect = (this._shapes[0] as Rect2D).toRect()
-    rect.x = x1
-    rect.y = y1
-    rect.w = x2 - x1 + 1
-    rect.h = y2 - y1 + 1
+    rect.x1 = x1
+    rect.y1 = y1
+    rect.x2 = x2
+    rect.y2 = y2
     this.updateShapeValues(rect)
   }
 
@@ -165,11 +176,14 @@ export class Box2D extends Label2D {
     const [width, height] = [limit.width, limit.height]
     const rect = (this._shapes[0] as Rect2D).toRect()
     const delta = end.clone().substract(start)
-    rect.x += delta.x
-    rect.y += delta.y
+    const [rw, rh] = [rect.x2 - rect.x1, rect.y2 - rect.y1]
+    rect.x1 += delta.x
+    rect.y1 += delta.y
     // The rect should not go outside the frame limit
-    rect.x = Math.min(width - rect.w, Math.max(0, rect.x))
-    rect.y = Math.min(height - rect.h, Math.max(0, rect.y))
+    rect.x1 = Math.min(width - rw, Math.max(0, rect.x1))
+    rect.y1 = Math.min(height - rh, Math.max(0, rect.y1))
+    rect.x2 = rect.x1 + rw
+    rect.y2 = rect.y1 + rh
     this.updateShapeValues(rect)
   }
 
@@ -193,7 +207,7 @@ export class Box2D extends Label2D {
       if (this._labelId < 0) {
         const r = this.toRect()
         Session.dispatch(addBox2dLabel(
-          this._label.item, this._label.category, r.x, r.y, r.w, r.h))
+          this._label.item, this._label.category, r.x1, r.y1, r.x2, r.y2))
       } else {
         Session.dispatch(changeLabelShape(
           this._label.item, this._label.shapes[0], this.toRect()))
@@ -212,7 +226,7 @@ export class Box2D extends Label2D {
     })
     this._labelId = -1
     this._color = getColorById(state.current.maxLabelId + 1)
-    const rect = makeRect({ x: start.x, y: start.y, w: 0, h: 0 })
+    const rect = makeRect({ x1: start.x, y1: start.y, x2: 0, y2: 0 })
     this.updateShapes([rect])
     this.setSelected(true, 5)
   }
@@ -238,22 +252,22 @@ export class Box2D extends Label2D {
    */
   private updateShapeValues (rect: RectType): void {
     const [rect2d, tl, tm, tr, rm, br, bm, bl, lm] = this._shapes
-    const x = rect.x
-    const y = rect.y
-    const w = rect.w
-    const h = rect.h
+    const x = rect.x1
+    const y = rect.y1
+    const w = rect.x2 - rect.x1
+    const h = rect.y2 - rect.y1
     rect2d.set(x, y, w, h)
 
     // vertices
     tl.set(x, y)
-    tr.set(x + w - 1, y)
-    bl.set(x, y + h - 1)
-    br.set(x + w - 1, y + h - 1)
+    tr.set(x + w, y)
+    bl.set(x, y + h)
+    br.set(x + w, y + h)
 
     // midpoints
-    tm.set(x + (w - 1) / 2, y)
-    bm.set(x + (w - 1) / 2, y + h - 1)
-    lm.set(x, y + (h - 1) / 2)
-    rm.set(x + w - 1, y + (h - 1) / 2)
+    tm.set(x + w / 2, y)
+    bm.set(x + w / 2, y + h)
+    lm.set(x, y + h / 2)
+    rm.set(x + w, y + h / 2)
   }
 }

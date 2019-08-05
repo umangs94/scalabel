@@ -87,12 +87,17 @@ export class Label2DList {
    * update labels from the state
    */
   public updateState (state: State, itemIndex: number): void {
+    if (this._mouseDown) {
+      // don't update the drawing state when the mouse is down
+      return
+    }
     const self = this
     self._state = state
     const item = state.items[itemIndex]
     // remove any label not in the state
     self._labels = Object.assign({} as typeof self._labels,
         _.pick(self._labels, _.keys(item.labels)))
+    // update drawable label values
     _.forEach(item.labels, (label, key) => {
       const labelId = Number(key)
       if (!(labelId in self._labels)) {
@@ -100,11 +105,16 @@ export class Label2DList {
       }
       self._labels[labelId].updateState(state, itemIndex, labelId)
     })
+    // order the labels and assign order values
     self._labelList = _.sortBy(_.values(self._labels), [(label) => label.order])
     _.forEach(self._labelList,
       (l: Label2D, index: number) => { l.index = index })
     this._highlightedLabel = null
-    this._selectedLabel = null
+    if (state.current.label >= 0 && (state.current.label in this._labels)) {
+      this._selectedLabel = this._labels[state.current.label]
+    } else {
+      this._selectedLabel = null
+    }
   }
 
   /**
